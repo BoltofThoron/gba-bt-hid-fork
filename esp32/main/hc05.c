@@ -43,9 +43,9 @@ typedef enum DESCRIPTOR_BUTTONS {
     HID_KEY_L = 0x80,
 
     HID_KEY_START = 0x01,
-    HID_KEY_SELECT = 0x02,
+    HID_KEY_SELECT = 0x02
 
-} DESCRIPTOR_BUTTONs_BITS;
+} DESCRIPTOR_BUTTONS_BITS;
 
 typedef enum HC05_BUTTONS {
     BUTTON_A = (1 << 0),
@@ -61,64 +61,64 @@ typedef enum HC05_BUTTONS {
 } HC05_BUTTONS_BITS;
 
 const uint8_t hid_descriptor_gba[] = {
-        0x05, 0x01,        // Usage Page (Generic Desktop Ctrls)
-        0x09, 0x05,        // Usage (Game Pad)
-        0xA1, 0x01,        // Collection (Application)
-        //Padding
-        0x95, 0x03,          //     REPORT_COUNT = 3
-        0x75, 0x08,          //     REPORT_SIZE = 8
-        0x81, 0x03,          //     INPUT = Cnst,Var,Abs
-        //DPAD
-        0x09, 0x39,        //   Usage (Hat switch)
-        0x15, 0x00,        //   Logical Minimum (0)
-        0x25, 0x07,        //   Logical Maximum (7)
-        0x35, 0x00,        //   Physical Minimum (0)
-        0x46, 0x3B, 0x01,  //   Physical Maximum (315)
-        0x65, 0x14,        //   Unit (System: English Rotation, Length: Centimeter)
-        0x75, 0x04,        //   Report Size (4)
-        0x95, 0x01,        //   Report Count (1)
-        0x81, 0x42,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,Null State)
-        //Buttons
-        0x65, 0x00,        //   Unit (None)
-        0x05, 0x09,        //   Usage Page (Button)
-        0x19, 0x01,        //   Usage Minimum (0x01)
-        0x29, 0x0E,        //   Usage Maximum (0x0E)
-        0x15, 0x00,        //   Logical Minimum (0)
-        0x25, 0x01,        //   Logical Maximum (1)
-        0x75, 0x01,        //   Report Size (1)
-        0x95, 0x0E,        //   Report Count (14)
-        0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-        //Padding
-        0x06, 0x00, 0xFF,  //   Usage Page (Vendor Defined 0xFF00)
-        0x09, 0x20,        //   Usage (0x20)
-        0x75, 0x06,        //   Report Size (6)
-        0x95, 0x01,        //   Report Count (1)
-        0x15, 0x00,        //   Logical Minimum (0)
-        0x25, 0x7F,        //   Logical Maximum (127)
-        0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-        0x81, 0x02,
-        0xc0
+	// Gamepad 1 with DPAD and 8 buttons (2 unused) - 32 bits total
+	0x05, 0x01,		// USAGE_PAGE (Generic Desktop)
+	0x09, 0x05,		// USAGE (Gamepad)
+	0xA1, 0x01,		// COLLECTION (Application)
+		//Padding - 16 bits
+		0x95, 0x02,		//     REPORT_COUNT = 3
+        0x75, 0x08,		//     REPORT_SIZE = 8
+        0x81, 0x03,		//     INPUT = Cnst,Var,Abs
+		0xA1, 0x00,		//	 COLLECTION (Physical)
+			// Buttons - 8 bits (Buttons X, Y are unused)
+			0x05, 0x09,			//   USAGE_PAGE (Button)
+			0x19, 0x01,			//   USAGE_MINIMUM (Button 1)
+			0x29, 0x08,			//   USAGE_MAXIMUM (Button 8)
+			0x15, 0x00,			//   LOGICAL_MINIMUM (0)
+			0x25, 0x01,			//   LOGICAL_MAXIMUM (1)
+			0x95, 0x08,			//   REPORT_COUNT (8)
+			0x75, 0x01,			//   REPORT_SIZE (1)
+			0x81, 0x02,			//   INPUT (Data,Var,Abs)
+			// DPAD - 8 bits
+			0x05, 0x01,			//	 USAGE_PAGE (Generic Desktop)
+			0x09, 0x39,			//	 USAGE (Hat switch)
+			0x15, 0x00,			//	 LOGICAL_MINIMUM (0)
+			0x25, 0x07,			//	 LOGICAL_MAXIMUM (7)
+			0x35, 0x00,			//	 PHYSICAL_MINIMUM (0)
+			0x46, 0x3B, 0x01,	//	 PHYSICAL_MAXIMUM (315)
+			0x65, 0x14,			//	 UNIT (Degrees)
+			0x95, 0x01,			//	 REPORT_COUNT (1)
+			0x75, 0x08,			//	 REPORT_SIZE (8)
+			0x81, 0x42,			//	 INPUT (Data,Var,Abs,Null State)
+		0xC0, 		// END_COLLECTION (Physical)		
+	0xC0 		// END_COLLECTION (Application)
 };
 
-static uint8_t send_report[] = {0xa1, 0x11, 0xc0, 0x00, 0x08, 0};
+
+//								Input HID	Res.  Btn1	Btn2
+static uint8_t send_report[] = {0xA1, 0x11, 0x00, 0x00, 0x08};
 
 static uint8_t hid_service_buffer[400];
 static uint8_t device_id_sdp_service_buffer[400];
 static const char hid_device_name[] = DEVICE_NAME;
 static uint16_t hid_cid = 0;
 
-static uint8_t but1_send = DPAD_RELEASED;
-static uint8_t but2_send = 0;
-static uint8_t but1_count = 0;
-static uint8_t but2_count = 0;
+static uint8_t but1_send = 0;
+static uint8_t but2_send = DPAD_RELEASED;
 
 static bool connected = false;
+
+static const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
 
 static btstack_packet_callback_registration_t hci_event_callback_registration;
 
 void interpretMessage(int length, char *message);
 
 void initBluetooth();
+
+void initStatusIndicator();
+
+void updateStatusIndicator(uint32_t level);
 
 void updateButtons(const char *message);
 
@@ -138,10 +138,26 @@ static void read_uart() {
     }
 }
 
+static void update_led() {
+	while (1) {
+		if (connected && gpio_get_level(GPIO_NUM_2) == 0) {
+			updateStatusIndicator(1);
+		} else if (!connected) {
+			updateStatusIndicator(1);
+			vTaskDelay(xDelay);
+			updateStatusIndicator(0);
+			vTaskDelay(xDelay);
+		}
+		vTaskDelay(xDelay);
+	}
+}
+
 void initHC05() {
+	initStatusIndicator();
     initBluetooth();
     initUART();
     xTaskCreate(read_uart, "read_uart", 2048, NULL, 1, NULL);
+	xTaskCreate(update_led, "update_led", 1024, NULL, 0, NULL);
 }
 
 void initBluetooth() {
@@ -165,6 +181,18 @@ void initBluetooth() {
     hid_device_register_packet_handler(&packet_handler);
 
     hci_power_control(HCI_POWER_ON);
+}
+
+void initStatusIndicator() {
+	gpio_config_t io_conf = {};
+	
+	io_conf.pin_bit_mask = (1ULL << GPIO_NUM_2);
+	io_conf.mode = GPIO_MODE_OUTPUT;
+	io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+	io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+	io_conf.intr_type = GPIO_INTR_DISABLE;
+	
+	gpio_config(&io_conf);
 }
 
 void checkHC05() {
@@ -211,32 +239,31 @@ void updateButtons(const char *message) {
     uint8_t buttons1 = message[6];
     uint8_t buttons2 = message[7];
 
-    int dpad = 0;
-    but1_send = 0;
-    but2_send = 0;
+    but1_send = 0x00;
+    but2_send = 0x00;
 
     if (yAxis == PAD_DOWN) {
         if (xAxis == PAD_LEFT) {
-            dpad = DPAD_SW;
+            but2_send += DPAD_SW;
         } else if (xAxis == PAD_RIGHT) {
-            dpad = DPAD_SE;
+            but2_send += DPAD_SE;
         } else {
-            dpad = DPAD_S;
+            but2_send += DPAD_S;
         }
     } else if (yAxis == PAD_UP) {
         if (xAxis == PAD_LEFT) {
-            dpad = DPAD_NW;
+            but2_send += DPAD_NW;
         } else if (xAxis == PAD_RIGHT) {
-            dpad = DPAD_NE;
+            but2_send += DPAD_NE;
         } else {
-            dpad = DPAD_N;
+            but2_send += DPAD_N;
         }
     } else if (xAxis == PAD_LEFT) {
-            dpad = DPAD_W;
+            but2_send += DPAD_W;
     } else if (xAxis == PAD_RIGHT) {
-            dpad = DPAD_E;
+            but2_send += DPAD_E;
     } else {
-        dpad = DPAD_RELEASED;
+        but2_send += DPAD_RELEASED;
     }
 
     if (buttons1 & BUTTON_A) {
@@ -256,14 +283,13 @@ void updateButtons(const char *message) {
     }
 
     if (buttons2 & BUTTON_START) {
-        but2_send += HID_KEY_START;
+		but1_send += HID_KEY_START;
     }
 
     if (buttons2 & BUTTON_SELECT) {
-        but2_send += HID_KEY_SELECT;
+		but1_send += HID_KEY_SELECT;
     }
     
-    but1_send += dpad;
 
     printf("but1: ");
     bin((uint8_t) but1_send);
@@ -272,12 +298,25 @@ void updateButtons(const char *message) {
     printf("\n");
 }
 
+void updateStatusIndicator(uint32_t level) {
+	// set status of GPIO2 to reflect connection status on LED
+	gpio_set_level(GPIO_NUM_2, level);
+	
+	// use this instead for debugging
+	//if (gpio_set_level(GPIO_NUM_2, level) != ESP_OK)
+	//{
+		// because this only influences the LED indicator, we will only print warning message
+		//printf("Failed to update GPIO2 on ESP32\n");	
+	//}
+}
+
 
 static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t packet_size) {
     UNUSED(channel);
     UNUSED(packet_size);
 
     bd_addr_t event_addr;
+
 
     switch (packet_type) {
         case HCI_EVENT_PACKET:
@@ -293,7 +332,8 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
                             hid_subevent_connection_opened_get_bd_addr(packet, event_addr);
                             char *address = bd_addr_to_str(event_addr);
                             printf("Saving address: %s\n", address);
-                            save_addr(event_addr);
+							
+							save_addr(event_addr);
 
                             connected = true;
 
@@ -305,12 +345,10 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
                             hid_cid = 0;
                             break;
                         case HID_SUBEVENT_CAN_SEND_NOW:
-
-//                            printf("but2_send 0x%.2X \n", (uint8_t) but2_send);
-                            send_report[4] = but1_send;
-                            send_report[5] = but2_send;
-                            hid_device_send_interrupt_message(hid_cid, &send_report[0], sizeof(send_report));
-                            hid_device_request_can_send_now_event(hid_cid);
+								send_report[3] = but1_send;
+								send_report[4] = but2_send;
+								hid_device_send_interrupt_message(hid_cid, &send_report[0], sizeof(send_report));
+								hid_device_request_can_send_now_event(hid_cid);							
                             break;
                         default:
                             break;
