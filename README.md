@@ -18,8 +18,6 @@ You also will need to install btstack. Commit https://github.com/bluekitchen/bts
 
 Just follow the ESP32 environment instructions here: https://docs.espressif.com/projects/esp-idf/en/v3.3.2/get-started/index.html
 
-Windows users will at minimum need to install MSys2 and Cygwin to compile and flash the code with ESP-IDF v3.3.2. I am hoping to create a guide for Windows users after I verify what all needs to be installed on a clean setup.
-
 The ESP32 is powered by the 3.3V the GBA gives through the port.
 Once the ESP32 is programmed the male link port connector should be wired to it like the following diagram:
 ![ESP32Diagram](images/ESP32-diagram.png?raw=true "Diagram")
